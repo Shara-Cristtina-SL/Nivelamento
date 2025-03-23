@@ -84,3 +84,10 @@ Informe a direção e a cor de cada seta uma de cada vez.
 Fique atento à barra de progresso, haverá uma para a direção e outra para a cor da seta.
 Use o feedback sonoro e visual (LEDs de feedback) para aprender com seus erros.
 Divirta-se e desafie sua memória!
+
+O Memory Matrix é o jogo perfeito para:
+● Aficionados por jogos de quebra-cabeça, desafios mentais e jogos
+que testam seus reflexos.
+● Quem deseja aprimorar suas habilidades de memorização,
+concentração, tempo de reação e coordenação.
+● Entusiastas de programação com Raspberry Pi Pico W
