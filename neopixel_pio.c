@@ -5,7 +5,7 @@
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
-#include "hardware/adc.h" // Incluir biblioteca ADC
+#include "hardware/adc.h"
 #include "ws2818b.pio.h"
 
 // Definições de pinos (permanecem as mesmas)
@@ -33,7 +33,7 @@
 #define COR_OFF_B 0
 #define COR_PROGRESSO_R 0
 #define COR_PROGRESSO_G 0
-#define COR_PROGRESSO_B 255 // Azul para a barra de progresso
+#define COR_PROGRESSO_B 255
 
 typedef enum {
     CIMA,
@@ -43,9 +43,8 @@ typedef enum {
     CENTRO
 } Direcao;
 
-// Estrutura de pixel e protótipos de funções (permanecem as mesmas)
 struct pixel_t {
-  uint8_t G, R, B;
+    uint8_t G, R, B;
 };
 typedef struct pixel_t pixel_t;
 typedef pixel_t npLED_t;
@@ -62,18 +61,17 @@ int getIndex(int x, int y);
 Direcao lerJoystick();
 bool lerBotaoCor1();
 bool lerBotaoCor2();
-bool lerBotaoJoystick(); //Nova função para o botão do joystick
-void tocarBuzzerAcerto(int duracao_ms);
-void tocarBuzzerErro(int duracao_ms);
+bool lerBotaoJoystick();
+void tocarBuzzerEco(int buzzer_a_pin, int buzzer_b_pin);
+void tocarBuzzerCoro(int buzzer_a_pin, int buzzer_b_pin);
+void feedback(int buzzer_a_pin, int buzzer_b_pin, int led_pin, int duracao_ms, bool is_acerto);
 void mostrarSequencia(const Direcao *sequencia, const bool *cores, int tamanho);
 bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corretas, int tamanho);
 void desenharSeta(Direcao direcao, bool cor1, bool cor2);
 void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b);
-void acenderLedAcerto(int duracao_ms);
-void acenderLedErro(int duracao_ms);
-void mostrarBarraProgresso(int progresso); // Nova função para mostrar a barra
+void mostrarBarraProgresso(int progresso);
 
-// Funções de inicialização do PIO e manipulação da matriz (permanecem as mesmas)
+// Funções de inicialização do PIO e manipulação da matriz
 void npInit(uint pin) {
     uint offset = pio_add_program(pio0, &ws2818b_program);
     np_pio = pio0;
@@ -112,22 +110,21 @@ void npWrite() {
 
 int getIndex(int x, int y) {
     if (y % 2 == 0) {
-        return 24-(y * 5 + x);
+        return 24 - (y * 5 + x);
     } else {
-        return 24-(y * 5 + (4 - x));
+        return 24 - (y * 5 + (4 - x));
     }
 }
 
-// Funções de leitura do joystick e botões (MODIFICADA)
+// Funções de leitura do joystick e botões
 Direcao lerJoystick() {
-    const int16_t centro = 2048; // Valor central do ADC (ajuste se necessário)
-    const int16_t deadzone = 200;  // Tamanho da "zona morta" em torno do centro
-    int16_t vrx_value = adc_read(); // Ler valor ADC do pino VRX
-    adc_select_input(0);  // Garante que o ADC esteja lendo o pino correto
-    int16_t vry_value = adc_read(); // Ler valor ADC do pino VRY
-    adc_select_input(1); //Garante que o ADC está lendo o pino correto
+    const int16_t centro = 2048;
+    const int16_t deadzone = 200;
+    int16_t vrx_value = adc_read();
+    adc_select_input(0);
+    int16_t vry_value = adc_read();
+    adc_select_input(1);
 
-    //Ajuste os limites conforme necessário com base nas leituras reais do seu joystick
     if (vrx_value < (centro - deadzone)) {
         return ESQUERDA;
     } else if (vrx_value > (centro + deadzone)) {
@@ -148,47 +145,48 @@ bool lerBotaoCor1() {
 bool lerBotaoCor2() {
     return !gpio_get(BUTTON_COR_2);
 }
+
 bool lerBotaoJoystick() {
     return !gpio_get(JOYSTICK_SW);
 }
 
-// Funções de feedback (permanecem as mesmas)
-void tocarBuzzerAcerto(int duracao_ms) {
-    gpio_put(BUZZER_ACERTO, 1);
-    sleep_ms(duracao_ms/2);
-    gpio_put(BUZZER_ACERTO, 0);
-    sleep_ms(duracao_ms/2);
+// Funções de feedback de som
+void tocarBuzzerEco(int buzzer_a_pin, int buzzer_b_pin) {
+    if (buzzer_a_pin != -1 && buzzer_b_pin != -1) {
+        gpio_put(buzzer_a_pin, 1);
+        sleep_ms(100);
+        gpio_put(buzzer_a_pin, 0);
+        sleep_ms(50);
+        gpio_put(buzzer_b_pin, 1);
+        sleep_ms(150);
+        gpio_put(buzzer_b_pin, 0);
+    }
 }
 
-void tocarBuzzerErro(int duracao_ms) {
-    gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-    gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-    gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-    gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
+void tocarBuzzerCoro(int buzzer_a_pin, int buzzer_b_pin) {
+    if (buzzer_a_pin != -1 && buzzer_b_pin != -1) {
+        gpio_put(buzzer_a_pin, 1);
+        gpio_put(buzzer_b_pin, 1);
+        sleep_ms(200);
+        gpio_put(buzzer_a_pin, 0);
+        gpio_put(buzzer_b_pin, 0);
+    }
 }
+// Função de feedback unificada
+void feedback(int buzzer_a_pin, int buzzer_b_pin, int led_pin, int duracao_ms, bool is_acerto) {
+    if (is_acerto) {
+        tocarBuzzerEco(buzzer_a_pin, buzzer_b_pin);
+    } else {
+        tocarBuzzerCoro(buzzer_a_pin, buzzer_b_pin);
+    }
 
-void acenderLedAcerto(int duracao_ms) {
-    gpio_put(LED_ACERTO, 1);
+    gpio_put(led_pin, 1);
     sleep_ms(duracao_ms);
-    gpio_put(LED_ACERTO, 0);
+    gpio_put(led_pin, 0);
 }
 
-void acenderLedErro(int duracao_ms) {
-    gpio_put(LED_ERRO, 1);
-    sleep_ms(duracao_ms);
-    gpio_put(LED_ERRO, 0);
-}
-
-// Funções de manipulação da matriz (permanecem as mesmas)
-void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b){
+// Funções de manipulação da matriz
+void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b) {
     npClear();
     switch (direcao) {
         case CIMA:
@@ -250,25 +248,23 @@ void mostrarSequencia(const Direcao *sequencia, const bool *cores, int tamanho) 
 
 // Nova função para mostrar a barra de progresso
 void mostrarBarraProgresso(int progresso) {
-    // progresso: 0 a 100 (percentual)
     npClear();
     int num_leds_acesos = (int)((float)progresso / 100.0 * LED_COUNT);
-
     for (int i = 0; i < num_leds_acesos; i++) {
         npSetLED(i, COR_PROGRESSO_R, COR_PROGRESSO_G, COR_PROGRESSO_B);
     }
     npWrite();
 }
+
 bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corretas, int tamanho) {
     printf("Prepare-se! \n");
-    sleep_ms(2000);
-    printf("Start\n");
+    sleep_ms(500);
 
     for (int i = 0; i < tamanho; i++) {
         Direcao input_direcao = CENTRO;
         bool input_cor = false;
         bool botao_pressionado = false;
-        int tempo_limite = 5000; // Tempo limite para cada entrada (5 segundos)
+        int tempo_limite = 5000;
         int tempo_inicio = to_ms_since_boot(get_absolute_time());
         int tempo_decorrido;
         int progresso;
@@ -276,27 +272,25 @@ bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corr
         // 1. Ler Direção do Joystick
         printf("Aguardando entrada do joystick para a direção %d...\n", i + 1);
         while (input_direcao == CENTRO && (tempo_decorrido = to_ms_since_boot(get_absolute_time()) - tempo_inicio) < tempo_limite) {
-            Direcao direcao_lida = lerJoystick(); // Leitura temporária
+            Direcao direcao_lida = lerJoystick();
             if (direcao_lida != CENTRO) {
-                input_direcao = direcao_lida; // Aceita a leitura se for válida
+                input_direcao = direcao_lida;
             }
             sleep_ms(50);
-
-            // Calcula e mostra o progresso
             progresso = (int)((float)tempo_decorrido / tempo_limite * 100);
             mostrarBarraProgresso(progresso);
         }
 
-        if (input_direcao == CENTRO) { // Tempo esgotado
+        if (input_direcao == CENTRO) {
             printf("Tempo esgotado para a direção!\n");
-            mostrarBarraProgresso(0); // Limpa a barra
+            mostrarBarraProgresso(0);
             return false;
         }
-        printf("Direção inserida: %d, Direção correta: %d\n", input_direcao, sequencia_correta[i]); // Debug
+        printf("Direção inserida: %d, Direção correta: %d\n", input_direcao, sequencia_correta[i]);
 
         // 2. Ler Cor (Botão)
         printf("Aguardando entrada do botão para a cor %d...\n", i + 1);
-        tempo_inicio = to_ms_since_boot(get_absolute_time()); // Reseta o tempo para a cor
+        tempo_inicio = to_ms_since_boot(get_absolute_time());
         while (!botao_pressionado && (tempo_decorrido = to_ms_since_boot(get_absolute_time()) - tempo_inicio) < tempo_limite) {
             if (lerBotaoCor1()) {
                 input_cor = true;
@@ -306,34 +300,30 @@ bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corr
                 botao_pressionado = true;
             }
             sleep_ms(50);
-
-             // Calcula e mostra o progresso
             progresso = (int)((float)tempo_decorrido / tempo_limite * 100);
             mostrarBarraProgresso(progresso);
         }
 
-        if (!botao_pressionado) { // Tempo esgotado
+        if (!botao_pressionado) {
             printf("Tempo esgotado para a cor!\n");
-            mostrarBarraProgresso(0); // Limpa a barra
+            mostrarBarraProgresso(0);
             return false;
         }
 
-        printf("Cor inserida: %s, Cor correta: %s\n", input_cor ? "Vermelho" : "Verde", cores_corretas[i] ? "Vermelho" : "Verde"); // Debug
+        printf("Cor inserida: %s, Cor correta: %s\n", input_cor ? "Vermelho" : "Verde", cores_corretas[i] ? "Vermelho" : "Verde");
 
-        // Verifica se a direção está correta
         if (input_direcao != sequencia_correta[i]) {
             printf("Direcao incorreta! Esperado: %d, Recebido: %d\n", sequencia_correta[i], input_direcao);
-            mostrarBarraProgresso(0); // Limpa a barra
+            mostrarBarraProgresso(0);
             return false;
         }
 
-        // Verifica se a cor está correta
         if (input_cor != cores_corretas[i]) {
             printf("Cor incorreta! Esperado: %s, Recebido: %s\n", cores_corretas[i] ? "Vermelho" : "Verde", input_cor ? "Vermelho" : "Verde");
-            mostrarBarraProgresso(0); // Limpa a barra
+            mostrarBarraProgresso(0);
             return false;
         }
-         mostrarBarraProgresso(0); // Limpa a barra
+        mostrarBarraProgresso(0);
     }
 
     return true;
@@ -362,51 +352,39 @@ int main() {
     gpio_set_dir(LED_ACERTO, GPIO_OUT);
 
     gpio_pull_up(JOYSTICK_SW);
+    gpio_pull_up(JOYSTICK_SW);
     gpio_pull_up(BUTTON_COR_1);
     gpio_pull_up(BUTTON_COR_2);
 
-    // Inicializar ADC
     adc_init();
-
-    // Habilitar os pinos do ADC (GPIO 26 e 27)
-    adc_gpio_init(JOYSTICK_VRY); // GPIO26 é ADC0
-    adc_gpio_init(JOYSTICK_VRX); // GPIO27 é ADC1
-
-    // Selecionar a entrada para o ADC (inicialmente selecionamos o VRX)
-    adc_select_input(1); // ADC1
+    adc_gpio_init(JOYSTICK_VRY);
+    adc_gpio_init(JOYSTICK_VRX);
+    adc_select_input(1);
 
     npInit(LED_PIN);
     npClear();
     npWrite();
 
     srand(time(NULL));
-
+    
     int nivel = 1;
     const int MAX_SEQUENCIA = 10;
-     bool paused = false;  // Variável para controlar o estado de pausa
+    bool paused = false;
 
     while (true) {
-
-         // Verificar se o botão do joystick foi pressionado
         if (lerBotaoJoystick()) {
-            paused = !paused; // Alternar o estado de pausa
-
+            paused = !paused;
             if (paused) {
                 printf("Jogo pausado!\n");
-                // Adicione aqui qualquer ação visual para indicar que o jogo está pausado
-                // Por exemplo, piscar todos os LEDs ou mostrar uma cor específica
             } else {
                 printf("Jogo retomado!\n");
-                 sleep_ms(1000);
-                // Adicione aqui qualquer ação visual para indicar que o jogo foi retomado
+                sleep_ms(1000);
             }
-
-            // Esperar um pouco para evitar leituras múltiplas do botão
             sleep_ms(200);
         }
-         if (!paused) {
-            printf("Nível: %d\n", nivel);
 
+        if (!paused) {
+            printf("Nível: %d\n", nivel);
             Direcao sequencia[MAX_SEQUENCIA];
             bool cores[MAX_SEQUENCIA];
             for (int i = 0; i < nivel; i++) {
@@ -421,28 +399,26 @@ int main() {
 
             if (acertou) {
                 printf("Parabéns! Próximo nível.\n");
-                tocarBuzzerAcerto(200);
-                acenderLedAcerto(200);
+               feedback(BUZZER_ACERTO, BUZZER_ERRO, LED_ACERTO, 200, true);
                 nivel++;
                 printf("Prepare-se\n");
                 sleep_ms(2000);
 
-                if (nivel > MAX_SEQUENCIA){
+                if (nivel > MAX_SEQUENCIA) {
                     printf("Você venceu o jogo!\n");
-                    while(true){
+                    while (true) {
                         npClear();
                         npWrite();
                     }
                 }
             } else {
                 printf("Errou! Game Over.\n");
-                tocarBuzzerErro(500);
-                acenderLedErro(500);
+                feedback(BUZZER_ACERTO, BUZZER_ERRO, LED_ERRO, 500, false);
                 sleep_ms(2000);
                 nivel = 1;
             }
-        }else {
-             sleep_ms(100);
+        } else {
+            sleep_ms(100);
         }
     }
 
