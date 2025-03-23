@@ -1,5 +1,6 @@
 Como Jogar MemoryMatrix2.0 (jogo da memória com progressão de dificuldade)
-Bem-vindo ao MemoryMatrix2.0, um jogo de memória e reflexos que desafiará suas habilidades! O objetivo é repetir sequências de direções e cores exibidas nos LEDs da BitDogLab.
+Bem-vindo ao MemoryMatrix2.0, um jogo de memória e reflexos que desafiará suas habilidades!
+O objetivo é repetir sequências de direções e cores exibidas nos LEDs da BitDogLab.
 
 Componentes:
 
@@ -8,9 +9,12 @@ LEDs: Indicam as direções e cores da sequência, e fornecem feedback visual;
 Joystick: Usado para selecionar as direções (CIMA, BAIXO, ESQUERDA, DIREITA);
 Botões de Cor: Usados para selecionar as cores (botão 1 = vermelho, botão 2 = verde);
 Buzzers: Fornecem feedback sonoro (acerto ou erro).
+
 LEDs de Feedback:
+
 LED verde: Indica que a sequência inserida está correta.
 LED vermelho: Indica que a sequência inserida está incorreta.
+
 Instruções:
 
 Início do Jogo:
