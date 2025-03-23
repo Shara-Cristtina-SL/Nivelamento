@@ -1,47 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h> // Para rand() e srand()
-#include <time.h>   // Para time() (seed para rand)
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 #include "hardware/clocks.h"
-#include "hardware/gpio.h"
-
 
 // Biblioteca gerada pelo arquivo .pio durante compilação.
 #include "ws2818b.pio.h"
 
-// Definições de pinos
+// Definição do número de LEDs e pino.
 #define LED_COUNT 25
 #define LED_PIN 7
-#define JOYSTICK_VRX 27
-#define JOYSTICK_VRY 26
-#define JOYSTICK_SW 22
-#define BUTTON_COR_1 5  // Botão para cor 1
-#define BUTTON_COR_2 6  // Botão para cor 2
-#define BUZZER_ACERTO 10
-#define BUZZER_ERRO 21
-#define LED_ERRO 11    // LED Vermelho para erro
-#define LED_ACERTO 13   // LED Verde para acerto
-
-// Definições de cores
-#define COR_1_R 255
-#define COR_1_G 0
-#define COR_1_B 0   // Vermelho
-#define COR_2_R 0
-#define COR_2_G 255
-#define COR_2_B 0   // Verde
-#define COR_OFF_R 0
-#define COR_OFF_G 0
-#define COR_OFF_B 0   // Desligado
-
-// Definições de direção (Mapear as direções do Joystick)
-typedef enum {
-    CIMA,
-    BAIXO,
-    ESQUERDA,
-    DIREITA,
-    CENTRO // Para quando o joystick está no centro
-} Direcao;
 
 // Definição de pixel GRB
 struct pixel_t {
@@ -56,24 +23,6 @@ npLED_t leds[LED_COUNT];
 // Variáveis para uso da máquina PIO.
 PIO np_pio;
 uint sm;
-
-// Protótipos das Funções (Importante para organizar o código)
-void npInit(uint pin);
-void npSetLED(const uint index, const uint8_t r, const uint8_t g, const uint8_t b);
-void npClear();
-void npWrite();
-int getIndex(int x, int y);
-Direcao lerJoystick();
-bool lerBotaoCor1();
-bool lerBotaoCor2();
-void tocarBuzzerAcerto(int duracao_ms);
-void tocarBuzzerErro(int duracao_ms);
-void mostrarSequencia(const Direcao *sequencia, const bool *cores, int tamanho);
-bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corretas, int tamanho);
-void desenharSeta(Direcao direcao, bool cor1, bool cor2);
-void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b);
-void acenderLedAcerto(int duracao_ms);
-void acenderLedErro(int duracao_ms);
 
 /**
  * Inicializa a máquina PIO para controle da matriz de LEDs.
@@ -132,273 +81,21 @@ void npWrite() {
   sleep_us(100); // Espera 100us, sinal de RESET do datasheet.
 }
 
-int getIndex(int x, int y) {
-    // Se a linha for par (0, 2, 4), percorremos da esquerda para a direita.
-    // Se a linha for ímpar (1, 3), percorremos da direita para a esquerda.
-    if (y % 2 == 0) {
-        return 24-(y * 5 + x); // Linha par (esquerda para direita).
-    } else {
-        return 24-(y * 5 + (4 - x)); // Linha ímpar (direita para esquerda).
-    }
-}
-
-Direcao lerJoystick() {
-    int vrx_value = gpio_get(JOYSTICK_VRX); // 0 ou 1 (digital)
-    int vry_value = gpio_get(JOYSTICK_VRY); // 0 ou 1 (digital)
-
-    // Mapeamento básico (ajuste conforme necessário)
-    if (vrx_value == 0 && vry_value == 1) {
-        return ESQUERDA;
-    } else if (vrx_value == 1 && vry_value == 0) {
-        return DIREITA;
-    } else if (vry_value == 1 && vrx_value == 1) {
-        return CIMA;
-    } else if (vry_value == 0 && vrx_value == 0) {
-        return BAIXO;
-    } else {
-        return CENTRO; // Joystick no centro
-    }
-}
-
-bool lerBotaoCor1() {
-    return !gpio_get(BUTTON_COR_1); // Retorna true se o botão estiver pressionado (pull-up)
-}
-
-bool lerBotaoCor2() {
-    return !gpio_get(BUTTON_COR_2); // Retorna true se o botão estiver pressionado (pull-up)
-}
-
-void tocarBuzzerAcerto(int duracao_ms) {
-    gpio_put(BUZZER_ACERTO, 1);
-    sleep_ms(duracao_ms/2);
-    gpio_put(BUZZER_ACERTO, 0);
-    sleep_ms(duracao_ms/2);
-}
-
-void tocarBuzzerErro(int duracao_ms) {
-    gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-     gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-     gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-     gpio_put(BUZZER_ERRO, 1);
-    sleep_ms(duracao_ms/4);
-    gpio_put(BUZZER_ERRO, 0);
-}
-
-void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b){
-    npClear();
-    switch (direcao) {
-        case CIMA:
-            // Define os LEDs para representar a seta para cima
-            npSetLED(getIndex(2, 0), r, g, b);   // LED superior central
-            npSetLED(getIndex(1, 1), r, g, b);  // LEDs laterais superiores
-            npSetLED(getIndex(3, 1), r, g, b);
-            npSetLED(getIndex(2, 1), r, g, b);  // LED central
-            npSetLED(getIndex(2, 2), r, g, b);  // LED central
-            npSetLED(getIndex(2, 3), r, g, b);  // LED central
-            npSetLED(getIndex(2, 4), r, g, b);  // LED central
-
-            break;
-        case BAIXO:
-            // Define os LEDs para representar a seta para baixo
-             npSetLED(getIndex(2, 4), r, g, b);   // LED inferior central
-            npSetLED(getIndex(1, 3), r, g, b);  // LEDs laterais inferiores
-            npSetLED(getIndex(3, 3), r, g, b);
-            npSetLED(getIndex(2, 3), r, g, b);  // LED central
-            npSetLED(getIndex(2, 2), r, g, b);  // LED central
-            npSetLED(getIndex(2, 1), r, g, b);  // LED central
-            npSetLED(getIndex(2, 0), r, g, b);  // LED central
-            break;
-        case ESQUERDA:
-            // Define os LEDs para representar a seta para a esquerda
-            npSetLED(getIndex(0, 2), r, g, b);   // LED esquerdo central
-            npSetLED(getIndex(1, 1), r, g, b);  // LEDs superior e inferior
-            npSetLED(getIndex(1, 3), r, g, b);
-            npSetLED(getIndex(1, 2), r, g, b);  // LED central
-            npSetLED(getIndex(2, 2), r, g, b);  // LED central
-            npSetLED(getIndex(3, 2), r, g, b);  // LED central
-            npSetLED(getIndex(4, 2), r, g, b);  // LED central
-            break;
-        case DIREITA:
-            // Define os LEDs para representar a seta para a direita
-            npSetLED(getIndex(4, 2), r, g, b);   // LED direito central
-            npSetLED(getIndex(3, 1), r, g, b);  // LEDs superior e inferior
-            npSetLED(getIndex(3, 3), r, g, b);
-            npSetLED(getIndex(3, 2), r, g, b);  // LED central
-            npSetLED(getIndex(2, 2), r, g, b);  // LED central
-            npSetLED(getIndex(1, 2), r, g, b);  // LED central
-            npSetLED(getIndex(0, 2), r, g, b);  // LED central
-            break;
-        default:
-            // Limpa todos os LEDs se a direção não for válida
-            npClear();
-            break;
-    }
-    npWrite();
-}
-
-void mostrarSequencia(const Direcao *sequencia, const bool *cores, int tamanho) {
-    for (int i = 0; i < tamanho; i++) {
-        // Mostra a seta e a cor correspondente
-        if (cores[i]) {
-            // Cor 1
-            mapearDirecaoNaMatriz(sequencia[i], COR_1_R, COR_1_G, COR_1_B);
-        } else {
-            // Cor 2
-            mapearDirecaoNaMatriz(sequencia[i], COR_2_R, COR_2_G, COR_2_B);
-        }
-        sleep_ms(500); // Tempo que a seta fica visível
-        npClear();     // Apaga a seta
-        npWrite();
-        sleep_ms(250); // Pequena pausa entre as setas
-    }
-}
-
-bool verificarSequencia(const Direcao *sequencia_correta, const bool *cores_corretas, int tamanho) {
-    printf("Prepare-se! 5 segundos de pausa...\n");
-    sleep_ms(5000); // Pausa de 5 segundos antes de ler a entrada do jogador
-    printf("Start");
-
-    for (int i = 0; i < tamanho; i++) {
-        Direcao input_direcao = CENTRO; // Inicializa com CENTRO
-        bool input_cor = false;         // True para Cor 1 (vermelho), false para Cor 2 (verde)
-        bool botao_pressionado = false;
-
-        // 1. Ler Direção do Joystick
-        printf("Aguardando entrada do joystick para a direção %d...\n", i+1);  // Debug
-        while (input_direcao == CENTRO) {
-            input_direcao = lerJoystick();
-            sleep_ms(50); // Pequeno delay para evitar leituras múltiplas
-        }
-        printf("Direção inserida: %d\n", input_direcao); // Debug
-
-        // 2. Ler Cor (Botão)
-        printf("Aguardando entrada do botão para a cor %d...\n", i+1); // Debug
-
-        while (!botao_pressionado) {
-            if (lerBotaoCor1()) {
-                input_cor = true; // Cor 1 (Vermelho)
-                botao_pressionado = true;
-            } else if (lerBotaoCor2()) {
-                input_cor = false; // Cor 2 (Verde)
-                botao_pressionado = true;
-            }
-            sleep_ms(50);
-        }
-         printf("Cor inserida: %s\n", input_cor ? "Vermelho" : "Verde"); // Debug
-
-        // Verifica se a direção está correta
-        if (input_direcao != sequencia_correta[i]) {
-            printf("Direcao incorreta! Esperado: %d, Recebido: %d\n", sequencia_correta[i], input_direcao); // Debug
-            return false;
-        }
-
-        // Verifica se a cor está correta
-        if (input_cor != cores_corretas[i]) {
-            printf("Cor incorreta! Esperado: %s, Recebido: %s\n", cores_corretas[i] ? "Vermelho" : "Verde", input_cor ? "Vermelho" : "Verde"); // Debug
-            return false;
-        }
-    }
-
-    return true; // Sequência correta
-}
-
-void acenderLedAcerto(int duracao_ms) {
-    gpio_put(LED_ACERTO, 1);  // Acende o LED verde
-    sleep_ms(duracao_ms);
-    gpio_put(LED_ACERTO, 0);  // Apaga o LED verde
-}
-
-void acenderLedErro(int duracao_ms) {
-    gpio_put(LED_ERRO, 1);    // Acende o LED vermelho
-    sleep_ms(duracao_ms);
-    gpio_put(LED_ERRO, 0);    // Apaga o LED vermelho
-}
-
-
 int main() {
-    // Inicialização
-    stdio_init_all();
-    gpio_init(JOYSTICK_VRX);
-    gpio_init(JOYSTICK_VRY);
-    gpio_init(JOYSTICK_SW);
-    gpio_init(BUTTON_COR_1);
-    gpio_init(BUTTON_COR_2);
-    gpio_init(BUZZER_ACERTO);
-    gpio_init(BUZZER_ERRO);
-    gpio_init(LED_ERRO);      // Inicializa pino do LED de erro
-    gpio_init(LED_ACERTO);     // Inicializa pino do LED de acerto
 
-    gpio_set_dir(JOYSTICK_VRX, GPIO_IN);
-    gpio_set_dir(JOYSTICK_VRY, GPIO_IN);
-    gpio_set_dir(JOYSTICK_SW, GPIO_IN);
-    gpio_set_dir(BUTTON_COR_1, GPIO_IN);
-    gpio_set_dir(BUTTON_COR_2, GPIO_IN);
-    gpio_set_dir(BUZZER_ACERTO, GPIO_OUT);
-    gpio_set_dir(BUZZER_ERRO, GPIO_OUT);
-    gpio_set_dir(LED_ERRO, GPIO_OUT);    // Define como saída o pino do LED de erro
-    gpio_set_dir(LED_ACERTO, GPIO_OUT);   // Define como saída o pino do LED de acerto
+  // Inicializa entradas e saídas.
+  stdio_init_all();
 
-    gpio_pull_up(JOYSTICK_SW);
-    gpio_pull_up(BUTTON_COR_1);
-    gpio_pull_up(BUTTON_COR_2);
-    // Não precisa pull-up nos leds pq já tem resistor
+  // Inicializa matriz de LEDs NeoPixel.
+  npInit(LED_PIN);
+  npClear();
 
-    npInit(LED_PIN);
-    npClear();
-    npWrite();
+  // Aqui, você desenha nos LEDs.
 
-    srand(time(NULL)); // Inicializa a semente do gerador de números aleatórios
+  npWrite(); // Escreve os dados nos LEDs.
 
-    int nivel = 1; // Começa no nível 1
-    const int MAX_SEQUENCIA = 10; // Máximo tamanho da sequência
-
-    while (true) {
-        printf("Nível: %d\n", nivel);
-
-        // 1. Gerar Sequência Aleatória
-        Direcao sequencia[MAX_SEQUENCIA];
-        bool cores[MAX_SEQUENCIA];
-        for (int i = 0; i < nivel; i++) {
-            sequencia[i] = (Direcao)(rand() % 4); // 0 a 3 (CIMA, BAIXO, ESQUERDA, DIREITA)
-            cores[i] = rand() % 2; // 0 ou 1 (Cor 1 ou Cor 2)
-        }
-
-        // 2. Mostrar Sequência
-        mostrarSequencia(sequencia, cores, nivel);
-
-        // 3. Jogador Tenta Repetir
-        printf("Sua vez!\n");
-        bool acertou = verificarSequencia(sequencia, cores, nivel);
-
-        // 4. Verificar Resultado
-        if (acertou) {
-            printf("Parabéns! Próximo nível.\n");
-            tocarBuzzerAcerto(200);
-            acenderLedAcerto(200); // Acende o LED verde por 200ms
-            nivel++;
-            printf("Pepare-se");
-            sleep_ms(3000);
-            if (nivel > MAX_SEQUENCIA){
-                printf("Você venceu o jogo!\n");
-                while(true){
-                    npClear();
-                    npWrite();
-                }
-            }
-        } else {
-            printf("Errou! Game Over.\n");
-            tocarBuzzerErro(500);
-            acenderLedErro(500);   // Acende o LED vermelho por 500ms
-            sleep_ms(2000);
-            nivel = 1; // Reinicia o nível
-        }
-    }
-
-    return 0;
+  // Não faz mais nada. Loop infinito.
+  while (true) {
+    sleep_ms(1000);
+  }
 }
