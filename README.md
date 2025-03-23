@@ -1,3 +1,23 @@
+Desafie sua Memória com Cores e Direções!
+Prepare-se para um teste de memória eletrizante com este divertido jogo para Raspberry Pi Pico W! Memorize sequências dinâmicas de direções (CIMA, BAIXO, ESQUERDA, DIREITA) e cores (VERMELHO, VERDE) exibidas em uma vibrante matriz de LEDs.
+
+Use o joystick para inserir as direções corretas e os botões para selecionar as cores correspondentes. Mas cuidado! O tempo é limitado e um erro significa Game Over!
+
+Recursos:
+
+Jogabilidade Viciante: Memorize, repita e avance por níveis cada vez mais desafiadores.
+
+Gráficos Atraentes: Desfrute de uma apresentação visual colorida e intuitiva na matriz de LEDs.
+
+Feedback Interativo: Receba sinais sonoros e visuais claros para acertos e erros.
+
+Dificuldade Progressiva: Teste seus limites à medida que as sequências ficam mais longas e complexas.
+
+Função de Pausa: Interrompa o jogo a qualquer momento e retome quando estiver pronto.
+
+Mostre suas habilidades de memória e alcance o nível máximo!
+
+
 Como Jogar MemoryMatrix2.0 (jogo da memória com progressão de dificuldade)
 
 Bem-vindo ao MemoryMatrix2.0, um jogo de memória e reflexos que desafiará suas habilidades!
