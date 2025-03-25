@@ -28,7 +28,7 @@ Componentes:
 Placa Raspberry Pi Pico W;
 LEDs: Indicam as direções e cores da sequência, e fornecem feedback visual;
 Joystick: Usado para selecionar as direções (CIMA, BAIXO, ESQUERDA, DIREITA);
-Botões de Cor: Usados para selecionar as cores (botão 1 = vermelho, botão 2 = verde);
+Botões de Cor: Usados para selecionar as cores (botão A = vermelho, botão B = verde);
 Buzzers: Fornecem feedback sonoro (acerto ou erro).
 
 LEDs de Feedback:
