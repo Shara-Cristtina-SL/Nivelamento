@@ -22,21 +22,21 @@
 #define LED_ACERTO 11      // Pino GPIO conectado ao LED de acerto
 
 // Definições de cores
-#define COR_1_R 255        // Componente vermelha da cor 1
+#define COR_1_R 32        // Componente vermelha da cor 1
 #define COR_1_G 0          // Componente verde da cor 1
 #define COR_1_B 0          // Componente azul da cor 1
 #define COR_2_R 0          // Componente vermelha da cor 2
-#define COR_2_G 255        // Componente verde da cor 2
+#define COR_2_G 32        // Componente verde da cor 2
 #define COR_2_B 0          // Componente azul da cor 2
 #define COR_OFF_R 0          // Componente vermelha da cor apagada
 #define COR_OFF_G 0          // Componente verde da cor apagada
 #define COR_OFF_B 0          // Componente azul da cor apagada
 #define COR_PROGRESSO_R 0    // Componente vermelha da cor da barra de progresso
 #define COR_PROGRESSO_G 0    // Componente verde da cor da barra de progresso
-#define COR_PROGRESSO_B 255  // Componente azul da cor da barra de progresso
+#define COR_PROGRESSO_B 32  // Componente azul da cor da barra de progresso
 #define COR_NUMERO_R 0       // Componente vermelha da cor do número
 #define COR_NUMERO_G 0       // Componente verde da cor do número
-#define COR_NUMERO_B 255       // Componente azul da cor do número
+#define COR_NUMERO_B 32       // Componente azul da cor do número
 
 // Definição do tipo enum para as direções
 typedef enum {
@@ -78,6 +78,7 @@ void desenharSeta(Direcao direcao, bool cor1, bool cor2);                       
 void mapearDirecaoNaMatriz(Direcao direcao, int r, int g, int b);                   // Mapeia uma direção para a matriz de LEDs
 void mostrarBarraProgresso(int progresso);                                       // Exibe uma barra de progresso na matriz de LEDs
 void desenharNumero(int numero, int r, int g, int b);                             // Desenha um número na matriz de LEDs
+void desenharCheckmark(int r, int g, int b);                                      // DEsenha um verificado
 
 // Funções de inicialização do PIO e manipulação da matriz
 void npInit(uint pin) {
@@ -200,6 +201,17 @@ void feedback(int buzzer_a_pin, int buzzer_b_pin, int led_pin, int duracao_ms, b
     gpio_put(led_pin, 1);    // Liga o LED
     sleep_ms(duracao_ms); // Aguarda o tempo especificado
     gpio_put(led_pin, 0);    // Desliga o LED
+}
+
+void desenharCheckmark(int r, int g, int b) {
+    npClear();
+    npSetLED(getIndex(0, 2), r, g, b);
+    npSetLED(getIndex(1, 3), r, g, b);
+    npSetLED(getIndex(2, 4), r, g, b);
+    npSetLED(getIndex(3, 3), r, g, b);
+    npSetLED(getIndex(4, 1), r, g, b);
+
+    npWrite();
 }
 
 // Funções de manipulação da matriz
@@ -407,9 +419,9 @@ void desenharNumero(int numero, int r, int g, int b) {
             npSetLED(getIndex(1, 2), r, g, b);
             npSetLED(getIndex(2, 2), r, g, b);
             npSetLED(getIndex(3, 2), r, g, b);
-            npSetLED(getIndex(4,2), r, g, b);
-            npSetLED(getIndex(4,3), r, g, b);
-            npSetLED(getIndex(4,4), r, g, b);
+            npSetLED(getIndex(4, 2), r, g, b);
+            npSetLED(getIndex(4, 3), r, g, b);
+            npSetLED(getIndex(4, 4), r, g, b);
             break;
         case 5: // Se o número for 5
             npSetLED(getIndex(0, 0), r, g, b);
@@ -505,7 +517,7 @@ int main() {
     // Inicializa os pinos dos buzzers e LEDs de feedback
 
     gpio_init(BUZZER_ACERTO);
-        gpio_init(BUZZER_ERRO);
+    gpio_init(BUZZER_ERRO);
     gpio_init(LED_ERRO);
     gpio_init(LED_ACERTO);
 
@@ -590,10 +602,11 @@ int main() {
                 // Se o jogador venceu o jogo (atingiu o nível máximo)
                 if (nivel > MAX_SEQUENCIA) {
                     printf("Você venceu o jogo!\n"); // Imprime mensagem de vitória
-                    while (true) {                      // Loop infinito
-                        npClear();                 // Apaga todos os LEDs
-                        npWrite();                 // Envia os dados para os LEDs
-                    }
+                    desenharCheckmark(0, 32 , 0); // Desenha o sinal de verificado verde
+                    sleep_ms(5000); // Mostra por 5 segundos
+                    npClear(); // Apaga a matriz
+                    npWrite();
+                    nivel = 1;
                 }
             } else { // Se o jogador errou
                 printf("Errou! Game Over.\n");                                 // Imprime mensagem de Game Over
